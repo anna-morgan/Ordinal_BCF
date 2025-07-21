@@ -2,7 +2,7 @@
 #include <RcppDist.h>
 #include <math.h>
 #include <RcppArmadilloExtensions/sample.h>
-//[[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::depends(RcppDist)]]
 
 using namespace Rcpp;
@@ -221,7 +221,7 @@ arma::vec cutpoints_Update(arma::vec y,
   // generate proposal:
   arma::vec g = arma::resize(shift(Newt_Raph_cpp(y, mu_vect, cuts),(J - 1)), J-2 ,1);
   arma::vec g_full = arma::resize(g, J, 1);
-  g_full(J - 2) = pow(10.0, 9);
+  g_full(J - 2) = pow(10.0, 9); // not sure how to do Inf in cpp?
   g_full = shift(g_full, 1);
   arma::mat D = arma::inv(- Hessian_cpp(y, mu_vect, g_full));
   double df = 100.0;
@@ -329,56 +329,59 @@ List ordinal_Sampler_cpp(List trace_init,
  }
 
 /*** R
-# N <- 200
-# J <- 4
-# set.seed(2020)
-# x0 <- rep(1, N)
-# x1 <- rnorm(N)
-# x2 <- rnorm(N, sd = 0.4)
-# X <- matrix(c(x0, x1, x2), ncol = 3)
-# beta_true <- c(1.1, 0.14, 0.05)
-# z_true <- as.vector(X %*% beta_true) + rnorm(N, 0, 1)
-# hist(z_true)
-# cutpoints_true <- c(-1000000, 0, 1.25, 2.25, 1000000)
-# y <- rep(0, N)
-# for(j in 1:length(cutpoints_true)){
-#   for(i in 1:N){
-#     if(z_true[i] >= cutpoints_true[j]){ 
-#       y[i] <- j
-#     }
-#   }
-# }
-# hist(y)
-# 
-# # Initiate parameters for sampler
-# cutpoints0 <- c(0, 1, 2, 100)
-# cutpoints0[4] <- 10 ^ 9
-# beta0 <- c(1, .1, .06)
-# B0 <- matrix(c(c(0.4,0,0), 
-#                c(0,0.4,0),
-#                c(0,0,0.4)), nrow = 3)
-# Bhat <- solve(B0 + t(X) %*% X)
-# 
-# # function arguments - temporary
-# beta <- beta0
-# cutpoints <- cutpoints0
-# cp_vect <- cutpoints[2:(J-1)]
-# beta <- as.vector(beta)
-# mus <- as.vector(X %*% beta)
-# 
-# Hessian_cpp(y, mus, cutpoints)
-# Gradient_cpp(y, mus, cutpoints)
-# log_post_cpp(cp_vect, y, mus)
-# cutpoints_z <- c(-1 * 10^9, cutpoints)
-# z_update(cutpoints_z, y, mus)
-# Newt_Raph_cpp(y, mus, cutpoints)
-# cutpoints_Update(y, mus, cutpoints)
-# Algorithm_2_cpp(y, mus, cutpoints, X, B0, beta0)
-# 
-# start_time <- Sys.time()
-# T_list <- ordinal_Sampler_cpp(trace, M, y, X, B0, beta0)
-# end_time <- Sys.time()
-# end_time - start_time
-
+if(FALSE){
+ N <- 200
+ J <- 4
+ set.seed(2020)
+ x0 <- rep(1, N)
+ x1 <- rnorm(N)
+ x2 <- rnorm(N, sd = 0.4)
+ X <- matrix(c(x0, x1, x2), ncol = 3)
+ beta_true <- c(1.1, 0.14, 0.05)
+ z_true <- as.vector(X %*% beta_true) + rnorm(N, 0, 1)
+ hist(z_true)
+ cutpoints_true <- c(-Inf, 0, 1.25, 2.25, Inf)
+ y <- rep(0, N)
+ for(j in 1:length(cutpoints_true)){
+   for(i in 1:N){
+     if(z_true[i] >= cutpoints_true[j]){ 
+       y[i] <- j
+     }
+   }
+ }
+ hist(y)
+ 
+ # Initiate parameters for sampler
+ cutpoints0 <- c(0, 1, 2, 1000)
+ cutpoints0[4] <- Inf
+ beta0 <- c(1, .1, .06)
+ B0 <- matrix(c(c(0.4,0,0), 
+                c(0,0.4,0),
+                c(0,0,0.4)), nrow = 3)
+ Bhat <- solve(B0 + t(X) %*% X)
+ 
+ # function arguments - temporary
+ beta <- beta0
+ cutpoints <- cutpoints0
+ cp_vect <- cutpoints[2:(J-1)]
+ beta <- as.vector(beta)
+ mus <- as.vector(X %*% beta)
+ 
+ Hessian_cpp(y, mus, cutpoints)
+ Gradient_cpp(y, mus, cutpoints)
+ log_post_cpp(cp_vect, y, mus)
+ cutpoints_z <- c(-1 * 10^9, cutpoints)
+ z_update(cutpoints_z, y, mus)
+ Newt_Raph_cpp(y, mus, cutpoints)
+ cutpoints_Update(y, mus, cutpoints)
+ Algorithm_2_cpp(y, mus, cutpoints, X, B0, beta0)
+ 
+ M <- 10
+ 
+ start_time <- Sys.time()
+ T_list <- ordinal_Sampler_cpp(trace, M, y, X, B0, beta0)
+ end_time <- Sys.time()
+ end_time - start_time
+}
 */
 
